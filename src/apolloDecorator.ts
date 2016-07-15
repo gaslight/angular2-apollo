@@ -166,6 +166,16 @@ class ApolloHandle {
     this.component[queryName] = {
       errors: null,
       loading: true,
+      isLoading: () => {
+        const queryId = obs.queryId;
+        const queries = this.client.store.getState().apollo.queries;
+        const loading = queries[queryId].loading;
+
+        // XXX backwards compatibility of loading property
+        this.component[queryName].loading = loading;
+
+        return loading;
+      },
     };
 
     const setQuery = ({ errors, data = {} }: any) => {
@@ -173,12 +183,15 @@ class ApolloHandle {
 
       assign(this.component[queryName], {
         errors,
-        loading: false,
         unsubscribe: () => this.getQuerySub(queryName).unsubscribe(),
         refetch: (...args) => this.backcompat(queryName, 'refetch', args),
         stopPolling: () => this.backcompat(queryName, 'stopPolling'),
         startPolling: (...args) => this.backcompat(queryName, 'startPolling', args),
       }, changed ? data : {});
+
+      // XXX backwards compatibility of loading property
+      // updates `loading` property
+      this.component[queryName].isLoading();
     };
 
     // we don't want to have multiple subscriptions
